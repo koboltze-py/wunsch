@@ -1,0 +1,20 @@
+[
+  {
+    "id": "1768426855.2786",
+    "user_name": "Test",
+    "date": "2026-01-15",
+    "shiftType": "Nacht",
+    "remarks": "",
+    "status": "PENDING",
+    "createdAt": "2026-01-14T22:40:55.280803"
+  },
+  {
+    "id": "1768426861.159196",
+    "user_name": "Test",
+    "date": "2026-01-17",
+    "shiftType": "Früh",
+    "remarks": "",
+    "status": "PENDING",
+    "createdAt": "2026-01-14T22:41:01.159209"
+  }
+]

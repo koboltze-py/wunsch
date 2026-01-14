@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dienstwünsche - DRK Köln</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div class="min-h-screen py-8 px-4">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-xl p-6 mb-6">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-12 h-12 bg-red-600 rounded-lg flex items-center justify-center">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <h1 class="text-2xl font-bold text-gray-900">Dienstwünsche</h1>
+                            <p class="text-sm text-gray-600">Angemeldet als: <span class="font-semibold text-red-600">{{ user_name }}</span></p>
+                        </div>
+                    </div>
+                    <a href="/logout" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Abmelden
+                    </a>
+                </div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Neuen Dienstwunsch erstellen</h2>
+                <form id="shiftRequestForm" class="space-y-6">
+                    <div>
+                        <label for="date" class="block text-sm font-semibold text-gray-700 mb-2">Datum <span class="text-red-500">*</span></label>
+                        <input type="date" id="date" name="date" required class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 focus:outline-none transition-colors text-gray-900"/>
+                    </div>
+                    <div>
+                        <label for="shiftType" class="block text-sm font-semibold text-gray-700 mb-2">Schichtart <span class="text-red-500">*</span></label>
+                        <select id="shiftType" name="shiftType" required class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 focus:outline-none transition-colors text-gray-900">
+                            <option value="">Bitte wählen...</option>
+                            <option value="Früh"> Frühschicht</option>
+                            <option value="Spät"> Spätschicht</option>
+                            <option value="Nacht"> Nachtschicht</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="remarks" class="block text-sm font-semibold text-gray-700 mb-2">Bemerkungen (optional)</label>
+                        <textarea id="remarks" name="remarks" rows="3" placeholder="Zusätzliche Hinweise..." class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 focus:outline-none transition-colors text-gray-900"></textarea>
+                    </div>
+                    <div id="successMessage" class="hidden bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-green-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <p class="text-sm text-green-800">Dienstwunsch erfolgreich gespeichert!</p>
+                        </div>
+                    </div>
+                    <div id="errorMessage" class="hidden bg-red-50 border border-red-200 rounded-lg p-4">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-red-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                            <p class="text-sm text-red-800" id="errorText"></p>
+                        </div>
+                    </div>
+                    <button type="submit" id="submitButton" class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold py-3.5 px-6 rounded-lg transition-all">Dienstwunsch abgeben</button>
+                </form>
+            </div>
+            <div class="bg-white rounded-2xl shadow-xl p-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Meine Dienstwünsche (aktueller Monat)</h2>
+                <div id="requestsList" class="space-y-4"><div class="text-center py-8 text-gray-500">Lade...</div></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const form = document.getElementById('shiftRequestForm');
+        const dateInput = document.getElementById('date');
+        const shiftTypeInput = document.getElementById('shiftType');
+        const remarksInput = document.getElementById('remarks');
+        const submitButton = document.getElementById('submitButton');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const requestsList = document.getElementById('requestsList');
+        dateInput.min = new Date().toISOString().split('T')[0];
+        async function loadRequests() {
+            try {
+                const response = await fetch('/api/shift-requests');
+                const data = await response.json();
+                if (data.success && data.data.length > 0) {
+                    displayRequests(data.data);
+                } else {
+                    requestsList.innerHTML = '<div class="text-center py-8 text-gray-500">Noch keine Dienstwünsche für diesen Monat</div>';
+                }
+            } catch (error) {
+                console.error('Fehler:', error);
+            }
+        }
+        function displayRequests(requests) {
+            requestsList.innerHTML = requests.map(req => {
+                const shiftIcon = req.shiftType === 'Früh' ? '' : req.shiftType === 'Spät' ? '' : '';
+                const shiftColor = req.shiftType === 'Früh' ? 'bg-amber-100 text-amber-800' : req.shiftType === 'Spät' ? 'bg-orange-100 text-orange-800' : 'bg-indigo-100 text-indigo-800';
+                return `<div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors"><div class="flex justify-between items-start"><div class="flex-1"><div class="flex items-center space-x-3 mb-2"><span class="text-lg font-semibold text-gray-900">${new Date(req.date).toLocaleDateString('de-DE')}</span><span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${shiftColor}">${shiftIcon} ${req.shiftType}</span></div>${req.remarks ? `<p class="text-sm text-gray-600">${req.remarks}</p>` : ''}</div><button onclick="deleteRequest('${req.id}')" class="ml-4 text-red-600 hover:text-red-800"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button></div></div>`;
+            }).join('');
+        }
+        async function deleteRequest(id) {
+            if (!confirm('Möchten Sie diesen Dienstwunsch wirklich löschen?')) return;
+            try {
+                await fetch(`/api/shift-requests/${id}`, { method: 'DELETE' });
+                loadRequests();
+            } catch (error) {
+                console.error('Fehler:', error);
+            }
+        }
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const date = dateInput.value;
+            const shiftType = shiftTypeInput.value;
+            const remarks = remarksInput.value;
+            if (!date || !shiftType) return showError('Bitte füllen Sie alle Pflichtfelder aus');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Wird gespeichert...';
+            hideMessages();
+            try {
+                const response = await fetch('/api/shift-requests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ date, shiftType, remarks })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    showSuccess();
+                    form.reset();
+                    loadRequests();
+                    setTimeout(hideMessages, 5000);
+                } else {
+                    showError(data.error || 'Ein Fehler ist aufgetreten');
+                }
+            } catch (error) {
+                showError('Ein Fehler ist aufgetreten');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Dienstwunsch abgeben';
+            }
+        });
+        function showSuccess() { successMessage.classList.remove('hidden'); }
+        function showError(message) { errorText.textContent = message; errorMessage.classList.remove('hidden'); }
+        function hideMessages() { successMessage.classList.add('hidden'); errorMessage.classList.add('hidden'); }
+        loadRequests();
+    </script>
+</body>
+</html>

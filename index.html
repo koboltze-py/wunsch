@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dienstwünsche - DRK Köln</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="module">
+        import React from 'https://esm.sh/react@18.2.0';
+        import ReactDOM from 'https://esm.sh/react-dom@18.2.0';
+        
+        const { useState, useEffect } = React;
+        
+        function ShiftRequestForm() {
+            const [formData, setFormData] = useState({
+                date: '',
+                shiftType: '',
+                remarks: ''
+            });
+            
+            const [errors, setErrors] = useState({});
+            const [isLoading, setIsLoading] = useState(false);
+            const [showSuccess, setShowSuccess] = useState(false);
+            const [submittedRequests, setSubmittedRequests] = useState([]);
+            
+            const shiftTypes = ['Früh', 'Spät', 'Nacht'];
+            
+            // Lade gespeicherte Wünsche aus localStorage
+            useEffect(() => {
+                const saved = localStorage.getItem('shiftRequests');
+                if (saved) {
+                    const requests = JSON.parse(saved);
+                    // Filter nur aktueller Monat
+                    const currentMonth = new Date().getMonth();
+                    const currentYear = new Date().getFullYear();
+                    
+                    const filtered = requests.filter(req => {
+                        const reqDate = new Date(req.date);
+                        return reqDate.getMonth() === currentMonth && 
+                               reqDate.getFullYear() === currentYear;
+                    });
+                    
+                    setSubmittedRequests(filtered);
+                }
+            }, []);
+            
+            const validateDate = (dateString) => {
+                if (!dateString) {
+                    return 'Bitte wählen Sie ein Datum aus';
+                }
+                
+                const selected = new Date(dateString);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                selected.setHours(0, 0, 0, 0);
+                
+                if (selected < today) {
+                    return 'Das Datum darf nicht in der Vergangenheit liegen';
+                }
+                
+                return null;
+            };
+            
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                
+                const newErrors = {};
+                
+                const dateError = validateDate(formData.date);
+                if (dateError) newErrors.date = dateError;
+                
+                if (!formData.shiftType) {
+                    newErrors.shiftType = 'Bitte wählen Sie eine Schichtart aus';
+                }
+                
+                if (Object.keys(newErrors).length > 0) {
+                    setErrors(newErrors);
+                    return;
+                }
+                
+                setIsLoading(true);
+                
+                // Simuliere Server-Request
+                setTimeout(() => {
+                    const newRequest = {
+                        id: Date.now().toString(),
+                        date: formData.date,
+                        shiftType: formData.shiftType,
+                        remarks: formData.remarks,
+                        status: 'PENDING',
+                        createdAt: new Date().toISOString()
+                    };
+                    
+                    // Speichere in localStorage
+                    const existing = JSON.parse(localStorage.getItem('shiftRequests') || '[]');
+                    existing.push(newRequest);
+                    localStorage.setItem('shiftRequests', JSON.stringify(existing));
+                    
+                    // Update Liste
+                    const currentMonth = new Date().getMonth();
+                    const currentYear = new Date().getFullYear();
+                    const filtered = existing.filter(req => {
+                        const reqDate = new Date(req.date);
+                        return reqDate.getMonth() === currentMonth && 
+                               reqDate.getFullYear() === currentYear;
+                    });
+                    setSubmittedRequests(filtered);
+                    
+                    // Erfolg anzeigen
+                    setShowSuccess(true);
+                    setFormData({ date: '', shiftType: '', remarks: '' });
+                    setIsLoading(false);
+                    
+                    setTimeout(() => setShowSuccess(false), 5000);
+                }, 1000);
+            };
+            
+            const formatDateForDisplay = (dateString) => {
+                return new Date(dateString).toLocaleDateString('de-DE', {
+                    weekday: 'short',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+            };
+            
+            const getStatusColor = (status) => {
+                switch (status) {
+                    case 'PENDING': return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+                    case 'APPROVED': return 'bg-green-100 text-green-800 border-green-300';
+                    case 'REJECTED': return 'bg-red-100 text-red-800 border-red-300';
+                    default: return 'bg-gray-100 text-gray-800 border-gray-300';
+                }
+            };
+            
+            const getStatusText = (status) => {
+                switch (status) {
+                    case 'PENDING': return 'Ausstehend';
+                    case 'APPROVED': return 'Genehmigt';
+                    case 'REJECTED': return 'Abgelehnt';
+                    default: return status;
+                }
+            };
+            
+            const getTodayString = () => {
+                return new Date().toISOString().split('T')[0];
+            };
+            
+            return React.createElement('div', {
+                className: 'min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:px-6 lg:px-8'
+            }, 
+                React.createElement('div', { className: 'max-w-md mx-auto' },
+                    // Header
+                    React.createElement('div', { className: 'text-center mb-8' },
+                        React.createElement('div', { 
+                            className: 'inline-flex items-center justify-center w-16 h-16 bg-red-600 rounded-full mb-4'
+                        },
+                            React.createElement('svg', {
+                                className: 'w-8 h-8 text-white',
+                                fill: 'none',
+                                stroke: 'currentColor',
+                                viewBox: '0 0 24 24'
+                            },
+                                React.createElement('path', {
+                                    strokeLinecap: 'round',
+                                    strokeLinejoin: 'round',
+                                    strokeWidth: 2,
+                                    d: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'
+                                })
+                            )
+                        ),
+                        React.createElement('h1', { className: 'text-3xl font-bold text-gray-900 mb-2' }, 'Dienstwunsch'),
+                        React.createElement('p', { className: 'text-gray-600' }, 'Teilen Sie uns Ihren Schichtwunsch mit')
+                    ),
+                    
+                    // Form Card
+                    React.createElement('div', { className: 'bg-white rounded-2xl shadow-xl p-6 sm:p-8 mb-6' },
+                        // Success Message
+                        showSuccess && React.createElement('div', {
+                            className: 'mb-6 p-4 bg-green-50 border-2 border-green-200 rounded-lg flex items-start'
+                        },
+                            React.createElement('svg', {
+                                className: 'w-6 h-6 text-green-600 mr-3 flex-shrink-0',
+                                fill: 'none',
+                                stroke: 'currentColor',
+                                viewBox: '0 0 24 24'
+                            },
+                                React.createElement('path', {
+                                    strokeLinecap: 'round',
+                                    strokeLinejoin: 'round',
+                                    strokeWidth: 2,
+                                    d: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'
+                                })
+                            ),
+                            React.createElement('div', null,
+                                React.createElement('h3', { className: 'text-sm font-semibold text-green-800 mb-1' }, 
+                                    'Erfolgreich eingereicht!'),
+                                React.createElement('p', { className: 'text-sm text-green-700' }, 
+                                    'Ihr Dienstwunsch wurde erfolgreich übermittelt.')
+                            )
+                        ),
+                        
+                        // Form
+                        React.createElement('form', { onSubmit: handleSubmit, className: 'space-y-6' },
+                            // Datum
+                            React.createElement('div', null,
+                                React.createElement('label', { 
+                                    htmlFor: 'date',
+                                    className: 'block text-sm font-semibold text-gray-700 mb-2'
+                                }, 
+                                    'Datum ',
+                                    React.createElement('span', { className: 'text-red-500' }, '*')
+                                ),
+                                React.createElement('input', {
+                                    type: 'date',
+                                    id: 'date',
+                                    value: formData.date,
+                                    min: getTodayString(),
+                                    onChange: (e) => {
+                                        setFormData({ ...formData, date: e.target.value });
+                                        setErrors({ ...errors, date: null });
+                                    },
+                                    className: `w-full px-4 py-3 rounded-lg border-2 transition-colors ${
+                                        errors.date ? 'border-red-300' : 'border-gray-300'
+                                    } focus:border-indigo-500 focus:outline-none`
+                                }),
+                                errors.date && React.createElement('p', { className: 'mt-2 text-sm text-red-600' }, errors.date)
+                            ),
+                            
+                            // Schichtart
+                            React.createElement('div', null,
+                                React.createElement('label', { 
+                                    htmlFor: 'shiftType',
+                                    className: 'block text-sm font-semibold text-gray-700 mb-2'
+                                }, 
+                                    'Schichtart ',
+                                    React.createElement('span', { className: 'text-red-500' }, '*')
+                                ),
+                                React.createElement('select', {
+                                    id: 'shiftType',
+                                    value: formData.shiftType,
+                                    onChange: (e) => {
+                                        setFormData({ ...formData, shiftType: e.target.value });
+                                        setErrors({ ...errors, shiftType: null });
+                                    },
+                                    className: `w-full px-4 py-3 rounded-lg border-2 transition-colors ${
+                                        errors.shiftType ? 'border-red-300' : 'border-gray-300'
+                                    } focus:border-indigo-500 focus:outline-none`
+                                },
+                                    React.createElement('option', { value: '' }, 'Bitte wählen...'),
+                                    ...shiftTypes.map(type => 
+                                        React.createElement('option', { key: type, value: type }, type)
+                                    )
+                                ),
+                                errors.shiftType && React.createElement('p', { className: 'mt-2 text-sm text-red-600' }, errors.shiftType)
+                            ),
+                            
+                            // Bemerkungen
+                            React.createElement('div', null,
+                                React.createElement('label', { 
+                                    htmlFor: 'remarks',
+                                    className: 'block text-sm font-semibold text-gray-700 mb-2'
+                                }, 'Bemerkungen'),
+                                React.createElement('textarea', {
+                                    id: 'remarks',
+                                    value: formData.remarks,
+                                    onChange: (e) => setFormData({ ...formData, remarks: e.target.value }),
+                                    rows: 4,
+                                    placeholder: 'Optional: Fügen Sie hier weitere Informationen hinzu...',
+                                    className: 'w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:outline-none resize-none'
+                                })
+                            ),
+                            
+                            // Submit Button
+                            React.createElement('button', {
+                                type: 'submit',
+                                disabled: isLoading,
+                                className: `w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold py-3.5 px-6 rounded-lg transition-all shadow-lg flex items-center justify-center ${
+                                    isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                                }`
+                            },
+                                isLoading ? 'Wird gesendet...' : 'Dienstwunsch einreichen'
+                            )
+                        )
+                    ),
+                    
+                    // Footer
+                    React.createElement('div', { className: 'mt-6 text-center text-sm text-gray-600' },
+                        React.createElement('p', null, '* Pflichtfelder')
+                    ),
+                    
+                    // Liste der Wünsche
+                    React.createElement('div', { className: 'mt-8 bg-white rounded-2xl shadow-xl p-6 sm:p-8' },
+                        React.createElement('div', { className: 'flex items-center justify-between mb-6' },
+                            React.createElement('h2', { className: 'text-xl font-bold text-gray-900' }, 
+                                'Meine Wünsche diesen Monat'),
+                            React.createElement('span', { className: 'text-sm text-gray-500' },
+                                new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })
+                            )
+                        ),
+                        
+                        submittedRequests.length === 0 ? 
+                            React.createElement('div', { className: 'text-center py-12' },
+                                React.createElement('p', { className: 'text-gray-500 text-lg font-medium mb-2' }, 
+                                    'Noch keine Wünsche eingereicht'),
+                                React.createElement('p', { className: 'text-gray-400 text-sm' }, 
+                                    'Sie haben noch keine Dienstwünsche für diesen Monat abgegeben.')
+                            )
+                        :
+                            React.createElement('div', { className: 'space-y-3' },
+                                ...submittedRequests.map(request => 
+                                    React.createElement('div', {
+                                        key: request.id,
+                                        className: 'border-2 border-gray-200 rounded-lg p-4'
+                                    },
+                                        React.createElement('div', { className: 'flex items-start justify-between' },
+                                            React.createElement('div', { className: 'flex-1' },
+                                                React.createElement('div', { className: 'font-semibold text-gray-900 mb-2' },
+                                                    formatDateForDisplay(request.date)
+                                                ),
+                                                React.createElement('div', { className: 'text-gray-700 font-medium mb-2' },
+                                                    request.shiftType
+                                                ),
+                                                request.remarks && React.createElement('div', { className: 'text-sm text-gray-600' },
+                                                    request.remarks
+                                                )
+                                            ),
+                                            React.createElement('span', {
+                                                className: `inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(request.status)}`
+                                            }, getStatusText(request.status))
+                                        )
+                                    )
+                                )
+                            )
+                    )
+                )
+            );
+        }
+        
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(ShiftRequestForm));
+    </script>
+</body>
+</html>

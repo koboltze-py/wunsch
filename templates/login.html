@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anmeldung - Dienstwünsche</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center px-4">
+    <div class="max-w-md w-full">
+        <!-- Logo/Header -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-red-600 rounded-full mb-4 shadow-lg">
+                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+            </div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                Willkommen
+            </h1>
+            <p class="text-gray-600">
+                Melden Sie sich an, um Ihre Dienstwünsche zu verwalten
+            </p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="bg-white rounded-2xl shadow-xl p-8">
+            <form id="loginForm" class="space-y-6">
+                <!-- Name Input -->
+                <div>
+                    <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Ihr Name <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="name" 
+                        name="name"
+                        required
+                        placeholder="Max Mustermann"
+                        class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 focus:outline-none transition-colors text-gray-900"
+                        autofocus
+                    />
+                </div>
+
+                <!-- Password Input -->
+                <div>
+                    <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Passwort <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password"
+                        required
+                        placeholder="Ihr Passwort"
+                        class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 focus:outline-none transition-colors text-gray-900"
+                    />
+                    <p id="errorMessage" class="mt-2 text-sm text-red-600 hidden"></p>
+                </div>
+
+                <!-- Info Text -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="text-sm text-blue-800">
+                            Geben Sie Ihren Namen ein, um sich anzumelden. Beim ersten Mal wird automatisch ein Account für Sie erstellt.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit" 
+                    id="loginButton"
+                    class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold py-3.5 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 shadow-lg hover:shadow-xl active:scale-[0.98]"
+                >
+                    Anmelden
+                </button>
+            </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-6 text-center">
+            <p class="text-sm text-gray-600">
+                🏥 DRK Köln - Erste-Hilfe-Station Flughafen
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const nameInput = document.getElementById('name');
+        const passwordInput = document.getElementById('password');
+        const errorMessage = document.getElementById('errorMessage');
+        const loginButton = document.getElementById('loginButton');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = nameInput.value.trim();
+            const password = passwordInput.value;
+            
+            if (!name) {
+                showError('Bitte geben Sie Ihren Namen ein');
+                return;
+            }
+
+            if (!password) {
+                showError('Bitte geben Sie Ihr Passwort ein');
+                return;
+            }
+
+            // Button deaktivieren
+            loginButton.disabled = true;
+            loginButton.textContent = 'Wird angemeldet...';
+
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ name, password }),
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // Erfolgreich angemeldet - Weiterleitung
+                    if (data.is_admin) {
+                        window.location.href = '/admin';
+                    } else {
+                        window.location.href = '/';
+                    }
+                } else {
+                    showError(data.error || 'Anmeldung fehlgeschlagen');
+                    loginButton.disabled = false;
+                    loginButton.textContent = 'Anmelden';
+                }
+            } catch (error) {
+                console.error('Fehler:', error);
+                showError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
+                loginButton.disabled = false;
+                loginButton.textContent = 'Anmelden';
+            }
+        });
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+            nameInput.classList.add('border-red-300');
+        }
+
+        // Fehler ausblenden wenn Benutzer tippt
+        nameInput.addEventListener('input', () => {
+            errorMessage.classList.add('hidden');
+            nameInput.classList.remove('border-red-300');
+        });
+    </script>
+</body>
+</html>

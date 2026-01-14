@@ -1,0 +1,83 @@
+// Prisma Schema für Dienstwünsche
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Model (vereinfacht - ggf. mit Clerk oder NextAuth synchronisiert)
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  clerkId       String?        @unique // Falls Clerk verwendet wird
+  role          Role           @default(USER)
+  
+  shiftRequests ShiftRequest[]
+  
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([clerkId])
+  @@index([email])
+}
+
+// Dienstwunsch Model
+model ShiftRequest {
+  id        String      @id @default(cuid())
+  
+  // Beziehung zum User
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Dienstwunsch-Daten
+  date      DateTime    @db.Date
+  shiftType ShiftType
+  remarks   String?     @db.Text
+  
+  // Status des Wunsches
+  status    RequestStatus @default(PENDING)
+  
+  // Genehmigung
+  approvedBy    String?
+  approvedAt    DateTime?
+  rejectionNote String?   @db.Text
+  
+  // Timestamps
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Indizes für Performance
+  @@index([userId])
+  @@index([date])
+  @@index([status])
+  @@index([userId, date])
+  
+  // Unique Constraint: Ein User kann nur einen Wunsch pro Tag haben
+  @@unique([userId, date])
+}
+
+// Enum für Schichtarten
+enum ShiftType {
+  Früh
+  Spät
+  Nacht
+}
+
+// Enum für Status
+enum RequestStatus {
+  PENDING   // Ausstehend
+  APPROVED  // Genehmigt
+  REJECTED  // Abgelehnt
+}
+
+// Enum für User-Rollen
+enum Role {
+  USER      // Normaler Mitarbeiter
+  ADMIN     // Administrator
+  MANAGER   // Schichtleiter
+}
