@@ -19,21 +19,33 @@
                 Willkommen
             </h1>
             <p class="text-gray-600">
-                Melden Sie sich an, um Ihre Dienstwünsche zu verwalten
+                Melden Sie sich an oder erstellen Sie einen Account
             </p>
         </div>
 
-        <!-- Login Card -->
-        <div class="bg-white rounded-2xl shadow-xl p-8">
-            <form id="loginForm" class="space-y-6">
+        <!-- Tabs -->
+        <div class="bg-white rounded-t-2xl shadow-xl">
+            <div class="flex border-b border-gray-200">
+                <button type="button" id="loginTab" class="flex-1 py-4 px-6 text-center font-semibold text-indigo-600 border-b-2 border-indigo-600" onclick="showLogin()">
+                    Anmelden
+                </button>
+                <button type="button" id="registerTab" class="flex-1 py-4 px-6 text-center font-semibold text-gray-500 border-b-2 border-transparent hover:text-gray-700" onclick="showRegister()">
+                    Registrieren
+                </button>
+            </div>
+        </div>
+
+        <!-- Login Form -->
+        <div id="loginForm" class="bg-white rounded-b-2xl shadow-xl p-8">
+            <form method="POST" action="/login" class="space-y-6">
                 <!-- Name Input -->
                 <div>
-                    <label for="name" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <label for="login_name" class="block text-sm font-semibold text-gray-700 mb-2">
                         Ihr Name <span class="text-red-500">*</span>
                     </label>
                     <input 
                         type="text" 
-                        id="name" 
+                        id="login_name" 
                         name="name"
                         required
                         placeholder="Max Mustermann"
@@ -44,31 +56,37 @@
 
                 <!-- Password Input -->
                 <div>
-                    <label for="password" class="block text-sm font-semibold text-gray-700 mb-2">
+                    <label for="login_password" class="block text-sm font-semibold text-gray-700 mb-2">
                         Passwort <span class="text-red-500">*</span>
                     </label>
                     <input 
                         type="password" 
-                        id="password" 
+                        id="login_password" 
                         name="password"
                         required
                         placeholder="Ihr Passwort"
                         class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 focus:outline-none transition-colors text-gray-900"
                     />
-                    <p id="errorMessage" class="mt-2 text-sm text-red-600 hidden"></p>
                 </div>
 
-                <!-- Info Text -->
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div class="flex items-start">
-                        <svg class="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p class="text-sm text-blue-800">
-                            Geben Sie Ihren Namen ein, um sich anzumelden. Beim ersten Mal wird automatisch ein Account für Sie erstellt.
-                        </p>
-                    </div>
+                <!-- New Password (hidden by default, shown if force_password_change) -->
+                <div id="newPasswordDiv" class="hidden">
+                    <label for="login_new_password" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Neues Passwort <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="password" 
+                        id="login_new_password" 
+                        name="new_password"
+                        placeholder="Neues Passwort (mind. 6 Zeichen)"
+                        class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 focus:outline-none transition-colors text-gray-900"
+                    />
+                    <p class="mt-2 text-sm text-amber-600">
+                        Sie müssen Ihr temporäres Passwort ändern
+                    </p>
                 </div>
+
+                <p id="loginErrorMessage" class="text-sm text-red-600 hidden"></p>
 
                 <!-- Submit Button -->
                 <button 
@@ -77,6 +95,102 @@
                     class="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white font-semibold py-3.5 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 shadow-lg hover:shadow-xl active:scale-[0.98]"
                 >
                     Anmelden
+                </button>
+            </form>
+        </div>
+
+        <!-- Register Form -->
+        <div id="registerForm" class="bg-white rounded-b-2xl shadow-xl p-8 hidden">
+            <form method="POST" action="/register" class="space-y-6">
+                <!-- Name Input -->
+                <div>
+                    <label for="register_name" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Ihr Name <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="register_name" 
+                        name="name"
+                        required
+                        placeholder="Max Mustermann"
+                        class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 focus:outline-none transition-colors text-gray-900"
+                    />
+                </div>
+
+                <!-- Email Input (Optional) -->
+                <div>
+                    <label for="register_email" class="block text-sm font-semibold text-gray-700 mb-2">
+                        E-Mail-Adresse <span class="text-gray-500">(optional)</span>
+                    </label>
+                    <input 
+                        type="email" 
+                        id="register_email" 
+                        name="email"
+                        placeholder="beispiel@email.de"
+                        class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 focus:outline-none transition-colors text-gray-900"
+                    />
+                    <p class="mt-1 text-xs text-gray-500">
+                        Optional: Für Kontakt und Benachrichtigungen
+                    </p>
+                </div>
+
+                <!-- Password Input -->
+                <div>
+                    <label for="register_password" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Passwort <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="password" 
+                        id="register_password" 
+                        name="password"
+                        required
+                        minlength="6"
+                        placeholder="Mindestens 6 Zeichen"
+                        class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 focus:outline-none transition-colors text-gray-900"
+                    />
+                </div>
+
+                <!-- Confirm Password Input -->
+                <div>
+                    <label for="register_confirm_password" class="block text-sm font-semibold text-gray-700 mb-2">
+                        Passwort bestätigen <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="password" 
+                        id="register_confirm_password" 
+                        name="confirm_password"
+                        required
+                        minlength="6"
+                        placeholder="Passwort wiederholen"
+                        class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50 focus:outline-none transition-colors text-gray-900"
+                    />
+                    <p class="mt-1 text-sm text-gray-500">
+                        Bitte geben Sie Ihr Passwort zur Bestätigung erneut ein
+                    </p>
+                </div>
+
+                <!-- Info Text -->
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex items-start">
+                        <svg class="w-5 h-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p class="text-sm text-green-800">
+                            Nach der Registrierung können Sie sich sofort anmelden und Ihre Dienstwünsche verwalten.
+                        </p>
+                    </div>
+                </div>
+
+                <p id="registerErrorMessage" class="text-sm text-red-600 hidden"></p>
+                <p id="registerSuccessMessage" class="text-sm text-green-600 hidden"></p>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit" 
+                    id="registerButton"
+                    class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-semibold py-3.5 px-6 rounded-lg transition-all duration-200 transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 shadow-lg hover:shadow-xl active:scale-[0.98]"
+                >
+                    Registrieren
                 </button>
             </form>
         </div>
@@ -90,74 +204,28 @@
     </div>
 
     <script>
-        const form = document.getElementById('loginForm');
-        const nameInput = document.getElementById('name');
-        const passwordInput = document.getElementById('password');
-        const errorMessage = document.getElementById('errorMessage');
-        const loginButton = document.getElementById('loginButton');
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const name = nameInput.value.trim();
-            const password = passwordInput.value;
-            
-            if (!name) {
-                showError('Bitte geben Sie Ihren Namen ein');
-                return;
-            }
-
-            if (!password) {
-                showError('Bitte geben Sie Ihr Passwort ein');
-                return;
-            }
-
-            // Button deaktivieren
-            loginButton.disabled = true;
-            loginButton.textContent = 'Wird angemeldet...';
-
-            try {
-                const response = await fetch('/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ name, password }),
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    // Erfolgreich angemeldet - Weiterleitung
-                    if (data.is_admin) {
-                        window.location.href = '/admin';
-                    } else {
-                        window.location.href = '/';
-                    }
-                } else {
-                    showError(data.error || 'Anmeldung fehlgeschlagen');
-                    loginButton.disabled = false;
-                    loginButton.textContent = 'Anmelden';
-                }
-            } catch (error) {
-                console.error('Fehler:', error);
-                showError('Ein Fehler ist aufgetreten. Bitte versuchen Sie es erneut.');
-                loginButton.disabled = false;
-                loginButton.textContent = 'Anmelden';
-            }
-        });
-
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.classList.remove('hidden');
-            nameInput.classList.add('border-red-300');
+        const loginTab = document.getElementById('loginTab');
+        const registerTab = document.getElementById('registerTab');
+        const loginFormDiv = document.getElementById('loginForm');
+        const registerFormDiv = document.getElementById('registerForm');
+        
+        function showLogin() {
+            loginFormDiv.classList.remove('hidden');
+            registerFormDiv.classList.add('hidden');
+            loginTab.classList.add('text-indigo-600', 'border-indigo-600');
+            loginTab.classList.remove('text-gray-500', 'border-transparent');
+            registerTab.classList.remove('text-indigo-600', 'border-indigo-600');
+            registerTab.classList.add('text-gray-500', 'border-transparent');
         }
-
-        // Fehler ausblenden wenn Benutzer tippt
-        nameInput.addEventListener('input', () => {
-            errorMessage.classList.add('hidden');
-            nameInput.classList.remove('border-red-300');
-        });
+        
+        function showRegister() {
+            registerFormDiv.classList.remove('hidden');
+            loginFormDiv.classList.add('hidden');
+            registerTab.classList.add('text-indigo-600', 'border-indigo-600');
+            registerTab.classList.remove('text-gray-500', 'border-transparent');
+            loginTab.classList.remove('text-indigo-600', 'border-indigo-600');
+            loginTab.classList.add('text-gray-500', 'border-transparent');
+        }
     </script>
 </body>
 </html>
