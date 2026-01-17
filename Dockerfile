@@ -1,5 +1,6 @@
 # Use official Python runtime as base image
-FROM python:3.13.0-slim
+# Using Python 3.11 for better package compatibility and stability
+FROM python:3.11-slim
 
 # Set working directory in container
 WORKDIR /app
