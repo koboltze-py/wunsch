@@ -28,8 +28,8 @@ COPY . .
 # Create instance directory for SQLite database (if used locally)
 RUN mkdir -p instance
 
-# Expose port 8000 (gunicorn default)
-EXPOSE 8000
+# Expose port (Cloud Run uses PORT env variable, default 8080)
+EXPOSE 8080
 
-# Run gunicorn server
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "4", "--timeout", "120", "app:app"]
+# Run gunicorn server - use PORT env variable from Cloud Run
+CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 4 --timeout 120 --access-logfile - --error-logfile - app:app
