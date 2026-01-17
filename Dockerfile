@@ -32,4 +32,5 @@ RUN mkdir -p instance
 EXPOSE 8080
 
 # Run gunicorn server - use PORT env variable from Cloud Run
-CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 4 --timeout 120 --access-logfile - --error-logfile - app:app
+# Reduced workers for Cloud Run, increased timeout, preload app
+CMD gunicorn --bind 0.0.0.0:${PORT:-8080} --workers 1 --threads 8 --timeout 300 --graceful-timeout 300 --preload --access-logfile - --error-logfile - --log-level info app:app
