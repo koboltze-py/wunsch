@@ -27,9 +27,12 @@ CORS(app,
 # Datenbank-Konfiguration
 # Lokal: SQLite (keine Admin-Rechte nötig) | Production: PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///dienstwuensche.db')
-# Fix für Render (postgres:// -> postgresql://)
+# Fix für Render: postgres:// -> postgresql+psycopg:// (für psycopg3)
 if app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgres://'):
-    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgres://', 'postgresql://', 1)
+    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgres://', 'postgresql+psycopg://', 1)
+elif app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgresql://'):
+    # Explizit psycopg3 Driver verwenden
+    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgresql://', 'postgresql+psycopg://', 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
