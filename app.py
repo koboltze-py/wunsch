@@ -35,6 +35,16 @@ elif app.config['SQLALCHEMY_DATABASE_URI'].startswith('postgresql://'):
     app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace('postgresql://', 'postgresql+psycopg://', 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Engine-Optionen für robustere PostgreSQL-Verbindung
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'pool_pre_ping': True,  # Verbindung vor Verwendung prüfen
+    'pool_recycle': 300,    # Verbindungen nach 5 Minuten recyclen
+    'connect_args': {
+        'connect_timeout': 10,
+        'options': '-c statement_timeout=30000'  # 30 Sekunden Query-Timeout
+    }
+}
+
 db = SQLAlchemy(app)
 
 # Datenbank-Modelle
