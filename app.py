@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
+﻿from flask import Flask, render_template, request, jsonify, session, redirect, url_for, send_file
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
@@ -19,7 +19,7 @@ from reportlab.lib.units import cm
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 
-# CORS-Konfiguration für React Frontend
+# CORS-Konfiguration fÃ¼r React Frontend
 CORS(app, 
      supports_credentials=True,
      origins=['http://localhost:5173', 'http://127.0.0.1:5173'],
@@ -27,33 +27,32 @@ CORS(app,
      methods=['GET', 'POST', 'DELETE', 'OPTIONS'])
 
 # Datenbank-Konfiguration
-# Lokal: SQLite (keine Admin-Rechte nötig) | Production: PostgreSQL
+# Lokal: SQLite (keine Admin-Rechte nÃ¶tig) | Production: PostgreSQL
 database_url = os.environ.get('DATABASE_URL', 'sqlite:///dienstwuensche.db')
 
-# Fix für Render: postgres:// -> postgresql+psycopg:// (für psycopg3)
+# Fix fÃ¼r Render: postgres:// -> postgresql:// (fÃ¼r psycopg3)
 if database_url.startswith('postgres://'):
-    database_url = database_url.replace('postgres://', 'postgresql+psycopg://', 1)
-elif database_url.startswith('postgresql://'):
-    database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+# Already in correct format for psycopg2
 
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Engine-Optionen für robustere PostgreSQL-Verbindung
+# Engine-Optionen fÃ¼r robustere PostgreSQL-Verbindung
 connect_args = {
     'connect_timeout': 10,
     'options': '-c statement_timeout=30000'
 }
 
-# IPv6 → IPv4 Fix: hostaddr Parameter für psycopg3
-if database_url.startswith('postgresql+psycopg://'):
+# IPv6 â†’ IPv4 Fix: hostaddr Parameter fÃ¼r psycopg3
+if database_url.startswith('postgresql://'):
     try:
         parsed = urlparse(database_url)
         hostname = parsed.hostname
         
         if hostname:
-            print(f"🔍 Hostname erkannt: {hostname}")
-            # Hole alle verfügbaren Adressen (IPv4 und IPv6)
+            print(f"ðŸ” Hostname erkannt: {hostname}")
+            # Hole alle verfÃ¼gbaren Adressen (IPv4 und IPv6)
             addr_info = socket.getaddrinfo(hostname, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
             
             # Suche nach IPv4-Adresse
@@ -65,13 +64,13 @@ if database_url.startswith('postgresql+psycopg://'):
             
             if ipv4_addr:
                 connect_args['hostaddr'] = ipv4_addr
-                print(f"✓ PostgreSQL: IPv4-Adresse {ipv4_addr} via hostaddr erzwungen")
+                print(f"âœ“ PostgreSQL: IPv4-Adresse {ipv4_addr} via hostaddr erzwungen")
             else:
-                print(f"⚠️ Keine IPv4-Adresse gefunden für {hostname}, verwende Standard-Verbindung")
+                print(f"âš ï¸ Keine IPv4-Adresse gefunden fÃ¼r {hostname}, verwende Standard-Verbindung")
         else:
-            print("⚠️ Kein Hostname in DATABASE_URL gefunden")
+            print("âš ï¸ Kein Hostname in DATABASE_URL gefunden")
     except Exception as e:
-        print(f"⚠️ IPv4-Auflösung fehlgeschlagen: {e}")
+        print(f"âš ï¸ IPv4-AuflÃ¶sung fehlgeschlagen: {e}")
         print(f"   DATABASE_URL: {database_url[:50]}...")
 
 app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
@@ -118,7 +117,7 @@ class ShiftNote(db.Model):
     user = db.relationship('User')
 
 class ShiftRequestSnapshot(db.Model):
-    """Speichert ursprüngliche Dienstwünsche beim ersten Speichern"""
+    """Speichert ursprÃ¼ngliche DienstwÃ¼nsche beim ersten Speichern"""
     __tablename__ = 'shift_request_snapshots'
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -149,11 +148,11 @@ def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
 def verify_password(stored_hash, password):
-    """Überprüfe ob Passwort korrekt ist"""
+    """ÃœberprÃ¼fe ob Passwort korrekt ist"""
     return stored_hash == hash_password(password)
 
 def generate_temp_password(length=12):
-    """Generiere ein temporäres Passwort"""
+    """Generiere ein temporÃ¤res Passwort"""
     import string
     import random
     chars = string.ascii_letters + string.digits + "!@#$%"
@@ -167,18 +166,18 @@ def get_current_user():
     return User.query.filter_by(name=user_name).first()
 
 def is_admin():
-    """Prüfe ob aktueller Benutzer Admin ist"""
+    """PrÃ¼fe ob aktueller Benutzer Admin ist"""
     user = get_current_user()
     return user and user.is_admin
 
 def require_login():
-    """Prüfe ob Benutzer angemeldet ist"""
+    """PrÃ¼fe ob Benutzer angemeldet ist"""
     if not get_current_user():
         return jsonify({'success': False, 'error': 'Nicht angemeldet'}), 401
     return None
 
 def migrate_database():
-    """Führt Datenbank-Migration durch"""
+    """FÃ¼hrt Datenbank-Migration durch"""
     from sqlalchemy import text, inspect
     
     def check_column_exists(table_name, column_name):
@@ -194,18 +193,18 @@ def migrate_database():
     is_postgres = 'postgresql' in str(db.engine.url)
     
     try:
-        # Prüfe ob updated_at Spalte existiert
+        # PrÃ¼fe ob updated_at Spalte existiert
         if check_table_exists('shift_requests') and not check_column_exists('shift_requests', 'updated_at'):
-            print("   Füge updated_at Spalte zu shift_requests hinzu...")
+            print("   FÃ¼ge updated_at Spalte zu shift_requests hinzu...")
             with db.engine.connect() as conn:
                 conn.execute(text("""
                     ALTER TABLE shift_requests 
                     ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 """))
                 conn.commit()
-            print("   ✓ updated_at Spalte hinzugefügt")
+            print("   âœ“ updated_at Spalte hinzugefÃ¼gt")
         
-        # Prüfe ob shift_notes Tabelle existiert
+        # PrÃ¼fe ob shift_notes Tabelle existiert
         if not check_table_exists('shift_notes'):
             print("   Erstelle shift_notes Tabelle...")
             with db.engine.connect() as conn:
@@ -236,20 +235,20 @@ def migrate_database():
                         )
                     """))
                 conn.commit()
-            print("   ✓ shift_notes Tabelle erstellt")
+            print("   âœ“ shift_notes Tabelle erstellt")
         
-        # Prüfe ob first_submission_at Spalte in users existiert
+        # PrÃ¼fe ob first_submission_at Spalte in users existiert
         if check_table_exists('users') and not check_column_exists('users', 'first_submission_at'):
-            print("   Füge first_submission_at Spalte zu users hinzu...")
+            print("   FÃ¼ge first_submission_at Spalte zu users hinzu...")
             with db.engine.connect() as conn:
                 conn.execute(text("""
                     ALTER TABLE users 
                     ADD COLUMN first_submission_at TIMESTAMP
                 """))
                 conn.commit()
-            print("   ✓ first_submission_at Spalte hinzugefügt")
+            print("   âœ“ first_submission_at Spalte hinzugefÃ¼gt")
         
-        # Prüfe ob shift_request_snapshots Tabelle existiert
+        # PrÃ¼fe ob shift_request_snapshots Tabelle existiert
         if not check_table_exists('shift_request_snapshots'):
             print("   Erstelle shift_request_snapshots Tabelle...")
             with db.engine.connect() as conn:
@@ -276,7 +275,7 @@ def migrate_database():
                         )
                     """))
                 conn.commit()
-            print("   ✓ shift_request_snapshots Tabelle erstellt")
+            print("   âœ“ shift_request_snapshots Tabelle erstellt")
     except Exception as e:
         print(f"   Warnung bei Migration: {e}")
 
@@ -284,18 +283,18 @@ def init_db():
     """Initialisiere Datenbank"""
     with app.app_context():
         db.create_all()
-        # Führe Migration durch
+        # FÃ¼hre Migration durch
         migrate_database()
         # Erstelle Initial-Admin falls keine Benutzer existieren
         if User.query.count() == 0:
             admin = User(
-                name='Groß',
+                name='GroÃŸ',
                 password=hash_password('mettwurst'),
                 is_admin=True
             )
             db.session.add(admin)
             db.session.commit()
-            print("✓ Initial-Admin 'Groß' erstellt")
+            print("âœ“ Initial-Admin 'GroÃŸ' erstellt")
 
 @app.route('/')
 def index():
@@ -312,7 +311,7 @@ def index():
 def login():
     """Login-Seite"""
     if request.method == 'POST':
-        # Unterstütze sowohl JSON als auch Form-Data
+        # UnterstÃ¼tze sowohl JSON als auch Form-Data
         if request.is_json:
             data = request.json
         else:
@@ -333,17 +332,17 @@ def login():
         if not user:
             return jsonify({'success': False, 'error': 'Benutzer nicht gefunden'}), 401
         
-        # Passwort prüfen
+        # Passwort prÃ¼fen
         if not verify_password(user.password, password):
             return jsonify({'success': False, 'error': 'Falsches Passwort'}), 401
         
-        # Prüfe ob Passwort geändert werden muss
+        # PrÃ¼fe ob Passwort geÃ¤ndert werden muss
         if user.force_password_change:
             if not new_password:
                 return jsonify({
                     'success': False, 
                     'force_password_change': True,
-                    'error': 'Sie müssen Ihr Passwort ändern'
+                    'error': 'Sie mÃ¼ssen Ihr Passwort Ã¤ndern'
                 }), 403
             
             # Neues Passwort setzen
@@ -354,7 +353,7 @@ def login():
         # Benutzer in Session speichern
         session['user_name'] = name
         
-        # Für normale Formulare: Redirect
+        # FÃ¼r normale Formulare: Redirect
         if not request.is_json:
             return redirect(url_for('index'))
         
@@ -364,9 +363,9 @@ def login():
 
 @app.route('/register', methods=['POST'])
 def register():
-    """Registrierung für neue Benutzer"""
+    """Registrierung fÃ¼r neue Benutzer"""
     try:
-        # Unterstütze sowohl JSON als auch Form-Data
+        # UnterstÃ¼tze sowohl JSON als auch Form-Data
         if request.is_json:
             data = request.json
         else:
@@ -384,13 +383,13 @@ def register():
             return jsonify({'success': False, 'error': 'Passwort muss mindestens 6 Zeichen lang sein'}), 400
         
         if password != confirm_password:
-            return jsonify({'success': False, 'error': 'Passwörter stimmen nicht überein'}), 400
+            return jsonify({'success': False, 'error': 'PasswÃ¶rter stimmen nicht Ã¼berein'}), 400
         
-        # Prüfe ob Benutzer bereits existiert
+        # PrÃ¼fe ob Benutzer bereits existiert
         if User.query.filter_by(name=name).first():
             return jsonify({'success': False, 'error': 'Dieser Name ist bereits vergeben'}), 400
         
-        # Prüfe ob E-Mail bereits existiert (falls angegeben)
+        # PrÃ¼fe ob E-Mail bereits existiert (falls angegeben)
         if email and User.query.filter_by(email=email).first():
             return jsonify({'success': False, 'error': 'Diese E-Mail-Adresse ist bereits vergeben'}), 400
         
@@ -405,11 +404,11 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         
-        # Für normale Formulare: Redirect zum Login
+        # FÃ¼r normale Formulare: Redirect zum Login
         if not request.is_json:
             return redirect(url_for('login'))
         
-        return jsonify({'success': True, 'message': 'Registrierung erfolgreich! Sie können sich jetzt anmelden.'})
+        return jsonify({'success': True, 'message': 'Registrierung erfolgreich! Sie kÃ¶nnen sich jetzt anmelden.'})
     
     except Exception as e:
         db.session.rollback()
@@ -423,7 +422,7 @@ def logout():
 
 @app.route('/admin')
 def admin_dashboard():
-    """Admin-Dashboard mit allen Dienstwünschen"""
+    """Admin-Dashboard mit allen DienstwÃ¼nschen"""
     user = get_current_user()
     if not user:
         return redirect(url_for('login'))
@@ -452,7 +451,7 @@ def admin_dashboard():
     all_users = User.query.order_by(User.name).all()
     users_data = []
     for u in all_users:
-        # Zähle shift_requests ohne sie komplett zu laden
+        # ZÃ¤hle shift_requests ohne sie komplett zu laden
         shift_count = ShiftRequest.query.filter_by(user_id=u.id).count()
         users_data.append({
             'id': u.id,
@@ -462,21 +461,21 @@ def admin_dashboard():
             'shift_count': shift_count
         })
     
-    # Lade Dienstwünsche für ausgewählten Monat
+    # Lade DienstwÃ¼nsche fÃ¼r ausgewÃ¤hlten Monat
     all_requests = []
     
-    # Ermittle welche User tatsächlich Änderungen haben
+    # Ermittle welche User tatsÃ¤chlich Ã„nderungen haben
     users_with_modifications = set()
     for user in User.query.filter(User.first_submission_at.isnot(None)).all():
         # Hole Snapshots und aktuelle Shifts
         snapshots = ShiftRequestSnapshot.query.filter_by(user_id=user.id).all()
         current_shifts = ShiftRequest.query.filter_by(user_id=user.id).all()
         
-        # Erstelle Sets für Vergleich
+        # Erstelle Sets fÃ¼r Vergleich
         snapshot_set = {(s.date.isoformat(), s.shift_type) for s in snapshots}
         current_set = {(s.date.isoformat(), s.shift_type) for s in current_shifts}
         
-        # Prüfe ob es Unterschiede gibt
+        # PrÃ¼fe ob es Unterschiede gibt
         if snapshot_set != current_set:
             users_with_modifications.add(user.id)
     
@@ -484,7 +483,7 @@ def admin_dashboard():
         db.extract('month', ShiftRequest.date) == selected_month,
         db.extract('year', ShiftRequest.date) == selected_year
     ).order_by(ShiftRequest.date).all():
-        # Lade Notizen für diesen Dienst
+        # Lade Notizen fÃ¼r diesen Dienst
         notes_data = []
         for note in req.shift_notes:
             notes_data.append({
@@ -510,7 +509,7 @@ def admin_dashboard():
             'notes': notes_data
         })
     
-    # Generiere Liste verfügbarer Monate (letzte 12 Monate + nächste 3)
+    # Generiere Liste verfÃ¼gbarer Monate (letzte 12 Monate + nÃ¤chste 3)
     import calendar as cal
     available_months = []
     today = datetime.now()
@@ -590,7 +589,7 @@ def toggle_admin(user_id):
 
 @app.route('/api/admin/users/<int:user_id>/reset-password', methods=['POST'])
 def reset_password(user_id):
-    """Passwort zurücksetzen (nur Admin)"""
+    """Passwort zurÃ¼cksetzen (nur Admin)"""
     auth_error = require_login()
     if auth_error:
         return auth_error
@@ -603,7 +602,7 @@ def reset_password(user_id):
         if not user:
             return jsonify({'success': False, 'error': 'Benutzer nicht gefunden'}), 404
         
-        # Generiere temporäres Passwort
+        # Generiere temporÃ¤res Passwort
         temp_password = generate_temp_password()
         user.password = hash_password(temp_password)
         user.force_password_change = True
@@ -612,7 +611,7 @@ def reset_password(user_id):
         return jsonify({
             'success': True, 
             'temp_password': temp_password,
-            'message': f'Neues Passwort für {user.name}: {temp_password}'
+            'message': f'Neues Passwort fÃ¼r {user.name}: {temp_password}'
         })
     except Exception as e:
         db.session.rollback()
@@ -620,7 +619,7 @@ def reset_password(user_id):
 
 @app.route('/api/admin/shift-requests/<int:request_id>/confirm', methods=['POST'])
 def confirm_shift_request(request_id):
-    """Dienstwunsch bestätigen (nur Admin)"""
+    """Dienstwunsch bestÃ¤tigen (nur Admin)"""
     auth_error = require_login()
     if auth_error:
         return auth_error
@@ -643,7 +642,7 @@ def confirm_shift_request(request_id):
 
 @app.route('/api/admin/users/<int:user_id>/confirm-all-shifts', methods=['POST'])
 def confirm_all_user_shifts(user_id):
-    """Alle Dienstwünsche eines Benutzers bestätigen (nur Admin)"""
+    """Alle DienstwÃ¼nsche eines Benutzers bestÃ¤tigen (nur Admin)"""
     auth_error = require_login()
     if auth_error:
         return auth_error
@@ -656,7 +655,7 @@ def confirm_all_user_shifts(user_id):
         if not user:
             return jsonify({'success': False, 'error': 'Benutzer nicht gefunden'}), 404
         
-        # Hole alle unbestätigten Dienstwünsche des Benutzers
+        # Hole alle unbestÃ¤tigten DienstwÃ¼nsche des Benutzers
         shifts = ShiftRequest.query.filter_by(user_id=user_id, confirmed=False).all()
         
         for shift in shifts:
@@ -686,7 +685,7 @@ def create_shift_note():
         if not shift_id or not content:
             return jsonify({'success': False, 'error': 'Dienst-ID und Inhalt erforderlich'}), 400
         
-        # Prüfe ob Dienst existiert
+        # PrÃ¼fe ob Dienst existiert
         shift_request = ShiftRequest.query.get(shift_id)
         if not shift_request:
             return jsonify({'success': False, 'error': 'Dienst nicht gefunden'}), 404
@@ -759,7 +758,7 @@ def messages():
             return jsonify({'success': False, 'error': str(e)}), 500
     
     else:
-        # Nachrichten abrufen (nur für Admins)
+        # Nachrichten abrufen (nur fÃ¼r Admins)
         if not is_admin():
             return jsonify({'success': False, 'error': 'Nicht autorisiert'}), 403
         
@@ -767,7 +766,7 @@ def messages():
         all_messages = Message.query.order_by(Message.created_at.desc()).all()
         
         for msg in all_messages:
-            # Prüfe welche Admins diese Nachricht gelesen haben
+            # PrÃ¼fe welche Admins diese Nachricht gelesen haben
             read_by_admins = []
             for read in msg.read_by:
                 read_by_admins.append({
@@ -776,7 +775,7 @@ def messages():
                     'read_at': read.read_at.isoformat()
                 })
             
-            # Prüfe ob aktueller Admin gelesen hat
+            # PrÃ¼fe ob aktueller Admin gelesen hat
             has_read = any(read.admin_id == user.id for read in msg.read_by)
             
             messages_data.append({
@@ -808,7 +807,7 @@ def mark_message_read(message_id):
         if not message:
             return jsonify({'success': False, 'error': 'Nachricht nicht gefunden'}), 404
         
-        # Prüfe ob bereits gelesen
+        # PrÃ¼fe ob bereits gelesen
         existing = MessageRead.query.filter_by(message_id=message_id, admin_id=user.id).first()
         if existing:
             return jsonify({'success': True, 'already_read': True})
@@ -825,7 +824,7 @@ def mark_message_read(message_id):
 
 @app.route('/api/admin/export')
 def export_shift_requests():
-    """Exportiere alle Dienstwünsche als JSON"""
+    """Exportiere alle DienstwÃ¼nsche als JSON"""
     auth_error = require_login()
     if auth_error:
         return auth_error
@@ -834,7 +833,7 @@ def export_shift_requests():
         return jsonify({'success': False, 'error': 'Nicht autorisiert'}), 403
     
     try:
-        # Gruppiere Dienstwünsche nach Nutzern
+        # Gruppiere DienstwÃ¼nsche nach Nutzern
         users = User.query.order_by(User.name).all()
         export_data = []
         
@@ -848,7 +847,7 @@ def export_shift_requests():
                     'confirmed': req.confirmed
                 })
             
-            if user_requests:  # Nur Benutzer mit Dienstwünschen
+            if user_requests:  # Nur Benutzer mit DienstwÃ¼nschen
                 export_data.append({
                     'user_name': user.name,
                     'shift_requests': user_requests
@@ -860,7 +859,7 @@ def export_shift_requests():
 
 @app.route('/api/admin/export/excel')
 def export_excel():
-    """Exportiere Dienstwünsche als Excel-Datei"""
+    """Exportiere DienstwÃ¼nsche als Excel-Datei"""
     auth_error = require_login()
     if auth_error:
         return auth_error
@@ -872,7 +871,7 @@ def export_excel():
         # Erstelle Workbook
         wb = Workbook()
         ws = wb.active
-        ws.title = "Dienstwünsche"
+        ws.title = "DienstwÃ¼nsche"
         
         # Styles
         header_fill = PatternFill(start_color="C00000", end_color="C00000", fill_type="solid")
@@ -903,7 +902,7 @@ def export_excel():
             ws.cell(row=row, column=3, value=req.date.strftime('%A')).border = border
             ws.cell(row=row, column=4, value=req.shift_type).border = border
             ws.cell(row=row, column=5, value=req.remarks or '').border = border
-            status_cell = ws.cell(row=row, column=6, value='Bestätigt' if req.confirmed else 'Offen')
+            status_cell = ws.cell(row=row, column=6, value='BestÃ¤tigt' if req.confirmed else 'Offen')
             status_cell.border = border
             if req.confirmed:
                 status_cell.fill = PatternFill(start_color="C6EFCE", end_color="C6EFCE", fill_type="solid")
@@ -927,14 +926,14 @@ def export_excel():
             output,
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             as_attachment=True,
-            download_name=f'Dienstwünsche_{datetime.now().strftime("%Y%m%d")}.xlsx'
+            download_name=f'DienstwÃ¼nsche_{datetime.now().strftime("%Y%m%d")}.xlsx'
         )
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/admin/export/pdf')
 def export_pdf():
-    """Exportiere Dienstwünsche als PDF-Datei mit Kalender-Layout"""
+    """Exportiere DienstwÃ¼nsche als PDF-Datei mit Kalender-Layout"""
     auth_error = require_login()
     if auth_error:
         return auth_error
@@ -959,7 +958,7 @@ def export_pdf():
             next_month = today.month + 1
             next_year = today.year
         
-        # Hole alle Dienstwünsche für Folgemonat
+        # Hole alle DienstwÃ¼nsche fÃ¼r Folgemonat
         all_shifts = ShiftRequest.query.filter(
             db.extract('month', ShiftRequest.date) == next_month,
             db.extract('year', ShiftRequest.date) == next_year
@@ -1028,7 +1027,7 @@ def export_pdf():
             # Name
             c.drawString(x_start, y_pos, user_name)
             
-            # Schichten für jeden Tag
+            # Schichten fÃ¼r jeden Tag
             for day in range(1, days_in_month + 1):
                 x = x_start + name_col_width + (day - 1) * day_col_width
                 
@@ -1053,11 +1052,11 @@ def export_pdf():
                     c.setFont("Helvetica-Bold", 7)
                     c.drawCentredString(x + day_col_width/2, y_pos + 5, shift_type)
                     
-                    # Bestätigt-Marker
+                    # BestÃ¤tigt-Marker
                     if shift_info['confirmed']:
                         c.setFont("Helvetica", 6)
                         c.setFillColorRGB(0, 0.5, 0)
-                        c.drawCentredString(x + day_col_width/2, y_pos - 2, '✓')
+                        c.drawCentredString(x + day_col_width/2, y_pos - 2, 'âœ“')
                 
                 # Rahmen
                 c.setStrokeColorRGB(0.7, 0.7, 0.7)
@@ -1066,7 +1065,7 @@ def export_pdf():
             
             y_pos -= row_height
             
-            # Neue Seite wenn nötig
+            # Neue Seite wenn nÃ¶tig
             if y_pos < 100:
                 c.showPage()
                 y_pos = height - 100
@@ -1106,12 +1105,12 @@ def export_pdf():
         c.drawString(x_start + 325, y_legend, "N10 = Nachtdienst 10h")
         
         c.setFillColorRGB(0, 0.5, 0)
-        c.drawString(x_start + 450, y_legend, "✓ = Bestätigt")
+        c.drawString(x_start + 450, y_legend, "âœ“ = BestÃ¤tigt")
         
-        # Fußzeile
+        # FuÃŸzeile
         c.setFont("Helvetica", 8)
         c.setFillColorRGB(0.5, 0.5, 0.5)
-        c.drawCentredString(width/2, 30, "🏥 DRK Köln - Erste-Hilfe-Station Flughafen")
+        c.drawCentredString(width/2, 30, "ðŸ¥ DRK KÃ¶ln - Erste-Hilfe-Station Flughafen")
         
         c.save()
         buffer.seek(0)
@@ -1127,7 +1126,7 @@ def export_pdf():
 
 @app.route('/api/shift-requests', methods=['GET'])
 def get_shift_requests():
-    """Hole alle Dienstwünsche des Benutzers für den Folgemonat"""
+    """Hole alle DienstwÃ¼nsche des Benutzers fÃ¼r den Folgemonat"""
     auth_error = require_login()
     if auth_error:
         return auth_error
@@ -1151,7 +1150,7 @@ def get_shift_requests():
         
         filtered = []
         for req in requests:
-            # Lade Notizen für diesen Dienst
+            # Lade Notizen fÃ¼r diesen Dienst
             notes_data = []
             for note in req.shift_notes:
                 notes_data.append({
@@ -1196,7 +1195,7 @@ def create_shift_request():
         if not data.get('shiftType'):
             return jsonify({'success': False, 'error': 'Schichtart ist erforderlich'}), 400
         
-        # Prüfe ob Datum in der Vergangenheit liegt
+        # PrÃ¼fe ob Datum in der Vergangenheit liegt
         request_date = datetime.fromisoformat(data['date'])
         if request_date.date() < datetime.now().date():
             return jsonify({
@@ -1204,7 +1203,7 @@ def create_shift_request():
                 'error': 'Das Datum darf nicht in der Vergangenheit liegen'
             }), 400
         
-        # Prüfe ob bereits ein Wunsch für diesen Tag und Benutzer existiert
+        # PrÃ¼fe ob bereits ein Wunsch fÃ¼r diesen Tag und Benutzer existiert
         existing = ShiftRequest.query.filter_by(
             user_id=user.id,
             date=request_date.date()
@@ -1213,7 +1212,7 @@ def create_shift_request():
         if existing:
             return jsonify({
                 'success': False,
-                'error': 'Sie haben bereits einen Wunsch für dieses Datum eingereicht'
+                'error': 'Sie haben bereits einen Wunsch fÃ¼r dieses Datum eingereicht'
             }), 400
         
         # Erstelle neuen Wunsch
@@ -1248,7 +1247,7 @@ def create_shift_request():
 
 @app.route('/api/admin/users/<int:user_id>/snapshots', methods=['GET'])
 def get_user_snapshots(user_id):
-    """Hole ursprüngliche Dienstwünsche eines Benutzers (nur Admin)"""
+    """Hole ursprÃ¼ngliche DienstwÃ¼nsche eines Benutzers (nur Admin)"""
     auth_error = require_login()
     if auth_error:
         return auth_error
@@ -1282,7 +1281,7 @@ def get_user_snapshots(user_id):
 
 @app.route('/api/shift-requests/batch', methods=['POST'])
 def save_shifts_batch():
-    """Speichere mehrere Dienstwünsche gleichzeitig mit Änderungsverfolgung"""
+    """Speichere mehrere DienstwÃ¼nsche gleichzeitig mit Ã„nderungsverfolgung"""
     auth_error = require_login()
     if auth_error:
         return auth_error
@@ -1292,12 +1291,12 @@ def save_shifts_batch():
         data = request.json
         shifts = data.get('shifts', {})  # Dict: {date: shiftType}
         
-        # Prüfe ob User bereits einmal gespeichert hat
+        # PrÃ¼fe ob User bereits einmal gespeichert hat
         is_first_submission = user.first_submission_at is None
         has_changes = False
         
         if not is_first_submission:
-            # Prüfe ob es Änderungen gibt (neue Dienste oder geänderte Dienste)
+            # PrÃ¼fe ob es Ã„nderungen gibt (neue Dienste oder geÃ¤nderte Dienste)
             existing_shifts = {sr.date.isoformat(): sr.shift_type for sr in ShiftRequest.query.filter_by(user_id=user.id).all()}
             
             for date_str, shift_type in shifts.items():
@@ -1305,19 +1304,19 @@ def save_shifts_batch():
                     has_changes = True
                     break
             
-            # Prüfe auch ob Dienste entfernt wurden
+            # PrÃ¼fe auch ob Dienste entfernt wurden
             for date_str in existing_shifts:
                 if date_str not in shifts and not ShiftRequest.query.filter_by(user_id=user.id, date=datetime.fromisoformat(date_str).date(), confirmed=True).first():
                     has_changes = True
                     break
         
-        # Lösche alle nicht-bestätigten Dienstwünsche des Users
+        # LÃ¶sche alle nicht-bestÃ¤tigten DienstwÃ¼nsche des Users
         ShiftRequest.query.filter_by(user_id=user.id, confirmed=False).delete()
         
-        # Erstelle neue Dienstwünsche
+        # Erstelle neue DienstwÃ¼nsche
         new_shifts = []
         for date_str, shift_type in shifts.items():
-            # Überspringe wenn bereits bestätigt
+            # Ãœberspringe wenn bereits bestÃ¤tigt
             if ShiftRequest.query.filter_by(user_id=user.id, date=datetime.fromisoformat(date_str).date(), confirmed=True).first():
                 continue
             
@@ -1334,7 +1333,7 @@ def save_shifts_batch():
         if is_first_submission:
             user.first_submission_at = datetime.now()
             
-            # Erstelle Snapshots der ursprünglichen Dienste
+            # Erstelle Snapshots der ursprÃ¼nglichen Dienste
             for date_str, shift_type in shifts.items():
                 snapshot = ShiftRequestSnapshot(
                     user_id=user.id,
@@ -1357,7 +1356,7 @@ def save_shifts_batch():
 
 @app.route('/api/shift-requests/<request_id>', methods=['DELETE'])
 def delete_shift_request(request_id):
-    """Lösche einen Dienstwunsch"""
+    """LÃ¶sche einen Dienstwunsch"""
     auth_error = require_login()
     if auth_error:
         return auth_error
@@ -1371,11 +1370,11 @@ def delete_shift_request(request_id):
         if not shift_request:
             return jsonify({'success': False, 'error': 'Wunsch nicht gefunden'}), 404
         
-        # Prüfe ob der Wunsch dem aktuellen Benutzer gehört
+        # PrÃ¼fe ob der Wunsch dem aktuellen Benutzer gehÃ¶rt
         if shift_request.user_id != user.id:
             return jsonify({'success': False, 'error': 'Nicht autorisiert'}), 403
         
-        # Lösche den Wunsch
+        # LÃ¶sche den Wunsch
         db.session.delete(shift_request)
         db.session.commit()
         
@@ -1385,7 +1384,7 @@ def delete_shift_request(request_id):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
 
-# Automatische Datenbank-Initialisierung beim Import (wichtig für Gunicorn/Render)
+# Automatische Datenbank-Initialisierung beim Import (wichtig fÃ¼r Gunicorn/Render)
 try:
     with app.app_context():
         db.create_all()
@@ -1393,19 +1392,19 @@ try:
         # Initial-Admin erstellen falls DB leer
         if User.query.count() == 0:
             admin = User(
-                name='Groß',
+                name='GroÃŸ',
                 password=hash_password('mettwurst'),
                 is_admin=True
             )
             db.session.add(admin)
             db.session.commit()
-            print("✓ Initial-Admin 'Groß' erstellt")
+            print("âœ“ Initial-Admin 'GroÃŸ' erstellt")
 except Exception as e:
-    print(f"⚠️ Warnung bei DB-Initialisierung: {e}")
+    print(f"âš ï¸ Warnung bei DB-Initialisierung: {e}")
 
 if __name__ == '__main__':
     init_db()
-    print("\n✅ Dienstwunsch-Anwendung startet...")
-    print("🌐 Öffne im Browser: http://localhost:5000")
-    print("⛔ Zum Beenden: STRG + C\n")
+    print("\nâœ… Dienstwunsch-Anwendung startet...")
+    print("ðŸŒ Ã–ffne im Browser: http://localhost:5000")
+    print("â›” Zum Beenden: STRG + C\n")
     app.run(debug=False, host='0.0.0.0', port=5000, use_reloader=False)
