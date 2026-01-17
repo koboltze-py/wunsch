@@ -1,0 +1,78 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+instance/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Documentation
+*.md
+!README.md
+
+# Backup
+Backup/
+
+# Testing
+test/
+*.test.py
+.pytest_cache/
+
+# Deployment configs
+Procfile
+render.yaml
+*.ps1
+
+# TypeScript/Frontend
+*.ts
+*.tsx
+tsconfig*.json
+next.config.js
+vite.config.ts
+tailwind.config.js
+postcss.config.js

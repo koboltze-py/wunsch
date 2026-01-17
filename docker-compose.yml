@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://wunsch:wunsch_password@db:5432/wunsch_db
+      - FLASK_ENV=production
+    depends_on:
+      - db
+    volumes:
+      - ./instance:/app/instance
+    restart: unless-stopped
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_USER=wunsch
+      - POSTGRES_PASSWORD=wunsch_password
+      - POSTGRES_DB=wunsch_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
