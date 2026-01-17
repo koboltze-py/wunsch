@@ -416,6 +416,24 @@ def admin_dashboard():
     
     # Lade Dienstwünsche für ausgewählten Monat
     all_requests = []
+    
+    # Berechne has_modifications für jeden User einmal
+    user_modifications = {}
+    for u in all_users:
+        has_modifications = False
+        if u.first_submission_at:
+            snapshots = ShiftRequestSnapshot.query.filter_by(user_id=u.id).all()
+            if snapshots:
+                snapshot_dict = {s.date.isoformat(): s.shift_type for s in snapshots}
+                current_shifts = ShiftRequest.query.filter_by(user_id=u.id).all()
+                current_dict = {s.date.isoformat(): s.shift_type for s in current_shifts}
+                all_dates = set(snapshot_dict.keys()) | set(current_dict.keys())
+                for date in all_dates:
+                    if snapshot_dict.get(date) != current_dict.get(date):
+                        has_modifications = True
+                        break
+        user_modifications[u.id] = has_modifications
+    
     for req in ShiftRequest.query.filter(
         db.extract('month', ShiftRequest.date) == selected_month,
         db.extract('year', ShiftRequest.date) == selected_year
@@ -442,6 +460,7 @@ def admin_dashboard():
             'createdAt': req.created_at.isoformat(),
             'updatedAt': req.updated_at.isoformat() if req.updated_at else req.created_at.isoformat(),
             'first_submission_at': req.user.first_submission_at.isoformat() if req.user.first_submission_at else None,
+            'has_modifications': user_modifications.get(req.user_id, False),
             'notes': notes_data
         })
     
@@ -1084,6 +1103,19 @@ def get_shift_requests():
             db.extract('year', ShiftRequest.date) == next_year
         ).order_by(ShiftRequest.date).all()
         
+        # Prüfe ob es Änderungen gibt
+        has_modifications = False
+        if user.first_submission_at:
+            snapshots = ShiftRequestSnapshot.query.filter_by(user_id=user.id).all()
+            if snapshots:
+                snapshot_dict = {s.date.isoformat(): s.shift_type for s in snapshots}
+                current_dict = {r.date.isoformat(): r.shift_type for r in requests}
+                all_dates = set(snapshot_dict.keys()) | set(current_dict.keys())
+                for date in all_dates:
+                    if snapshot_dict.get(date) != current_dict.get(date):
+                        has_modifications = True
+                        break
+        
         filtered = []
         for req in requests:
             # Lade Notizen für diesen Dienst
@@ -1109,7 +1141,7 @@ def get_shift_requests():
                 'notes': notes_data
             })
         
-        return jsonify({'success': True, 'data': filtered})
+        return jsonify({'success': True, 'data': filtered, 'has_modifications': has_modifications})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -1199,10 +1231,25 @@ def get_user_snapshots(user_id):
         snapshots = ShiftRequestSnapshot.query.filter_by(user_id=user_id).order_by(ShiftRequestSnapshot.date).all()
         current_shifts = ShiftRequest.query.filter_by(user_id=user_id).order_by(ShiftRequest.date).all()
         
+        # Prüfe ob es tatsächlich Änderungen gibt
+        has_modifications = False
+        if user.first_submission_at and snapshots:
+            # Vergleiche Snapshots mit aktuellen Diensten
+            snapshot_dict = {s.date.isoformat(): s.shift_type for s in snapshots}
+            current_dict = {s.date.isoformat(): s.shift_type for s in current_shifts}
+            
+            # Prüfe auf Änderungen, Hinzufügungen oder Löschungen
+            all_dates = set(snapshot_dict.keys()) | set(current_dict.keys())
+            for date in all_dates:
+                if snapshot_dict.get(date) != current_dict.get(date):
+                    has_modifications = True
+                    break
+        
         return jsonify({
             'success': True,
             'user_name': user.name,
             'first_submission_at': user.first_submission_at.isoformat() if user.first_submission_at else None,
+            'has_modifications': has_modifications,
             'snapshots': [{'date': s.date.isoformat(), 'shift_type': s.shift_type} for s in snapshots],
             'current': [{
                 'date': s.date.isoformat(), 

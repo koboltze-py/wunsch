@@ -256,6 +256,7 @@
                 if (!userShifts[shift.user_id]) {
                     userShifts[shift.user_id] = {
                         name: shift.user_name,
+                        has_modifications: shift.has_modifications || false,
                         shifts: []
                     };
                 }
@@ -277,7 +278,7 @@
                 const userData = userShifts[userId];
                 const shifts = userData.shifts.sort((a, b) => new Date(a.date) - new Date(b.date));
                 const unconfirmedCount = shifts.filter(s => !s.confirmed).length;
-                const hasModifications = userData.shifts.some(s => s.first_submission_at);
+                const hasModifications = userData.has_modifications === true;
                 
                 return `
                     <div class="border border-gray-200 rounded-lg overflow-hidden">
